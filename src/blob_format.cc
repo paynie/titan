@@ -113,6 +113,7 @@ void BlobIndex::EncodeTo(std::string* dst) const {
   dst->push_back(kBlobRecord);
   PutVarint64(dst, file_number);
   blob_handle.EncodeTo(dst);
+  PutFixed64(dst, ttl);
 }
 
 Status BlobIndex::DecodeFrom(Slice* src) {
@@ -125,6 +126,8 @@ Status BlobIndex::DecodeFrom(Slice* src) {
   if (!s.ok()) {
     return Status::Corruption("BlobIndex", s.ToString());
   }
+
+  GetFixed64(src, &ttl);
   return s;
 }
 

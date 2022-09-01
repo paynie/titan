@@ -2,6 +2,7 @@
 
 #include <string>
 #include <utility>
+#include <iostream>
 
 #include "db_impl.h"
 #include "rocksdb/compaction_filter.h"
@@ -36,6 +37,11 @@ class TitanCompactionFilter final : public CompactionFilter {
                     ValueType value_type, const Slice &value,
                     std::string *new_value,
                     std::string *skip_until) const override {
+    
+     std::cout << "Filter data now, value type " << value_type << std::endl;
+     return original_filter_->FilterV3(level, key, seqno, value_type, value,
+                       new_value, skip_until);
+    /*
     if (skip_value_) {
       return original_filter_->FilterV3(level, key, seqno, value_type, Slice(),
                                         new_value, skip_until);
@@ -96,6 +102,7 @@ class TitanCompactionFilter final : public CompactionFilter {
       // GetBlobRecord failed, keep the value.
       return Decision::kKeep;
     }
+    */
   }
 
  private:

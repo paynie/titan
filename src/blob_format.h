@@ -163,6 +163,7 @@ struct BlobIndex {
   };
   uint64_t file_number{0};
   BlobHandle blob_handle;
+  uint64_t ttl{0};
 
   void EncodeTo(std::string* dst) const;
   Status DecodeFrom(Slice* src);

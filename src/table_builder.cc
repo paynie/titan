@@ -1,5 +1,4 @@
 #include "table_builder.h"
-#include <iostream>
 
 #ifndef __STDC_FORMAT_MACROS
 #define __STDC_FORMAT_MACROS
@@ -9,6 +8,7 @@
 
 #include "monitoring/statistics.h"
 #include "titan_logging.h"
+#include "ttl.h"
 
 namespace rocksdb {
 namespace titandb {
@@ -25,7 +25,6 @@ TitanTableBuilder::NewCachedRecordContext(const ParsedInternalKey& ikey,
 }
 
 void TitanTableBuilder::Add(const Slice& key, const Slice& value) {
-  std::cout << "Add key and value " << std::endl;
   if (!ok()) return;
 
   ParsedInternalKey ikey;
@@ -40,8 +39,6 @@ void TitanTableBuilder::Add(const Slice& key, const Slice& value) {
 
   if (ikey.type == kTypeBlobIndex &&
       cf_options_.blob_run_mode == TitanBlobRunMode::kFallback) {
-
-    std::cout << "ikey.type == kTypeBlobIndex && cf_options_.blob_run_mode == TitanBlobRunMode::kFallback " << std::endl;
     // we ingest value from blob file
     Slice copy = value;
     BlobIndex index;
@@ -72,12 +69,6 @@ void TitanTableBuilder::Add(const Slice& key, const Slice& value) {
     }
   } else if (ikey.type == kTypeValue &&
              cf_options_.blob_run_mode == TitanBlobRunMode::kNormal) {
-
-              
-    std::cout << "ikey.type == kTypeValue && cf_options_.blob_run_mode == TitanBlobRunMode::kNormal " << std::endl;
-
-    std::cout << "value size is " << value.size() << ", min_blob_size " << cf_options_.min_blob_size << std::endl;
-
     bool is_small_kv = value.size() < cf_options_.min_blob_size;
     if (is_small_kv) {
       AddBase(key, ikey, value);
@@ -141,21 +132,6 @@ void TitanTableBuilder::AddBase(const Slice& key,
   }
 }
 
-uint64_t littleBytesToLong(const char *bytes, int len) {
-  assert(len == 8);
-
-  uint64_t n = 0;
-  n += (int64_t)(bytes[0] & 255);
-  n += (int64_t)(bytes[1] & 255) << 8;
-  n += (int64_t)(bytes[2] & 255) << 16;
-  n += (int64_t)(bytes[3] & 255) << 24;
-  n += (int64_t)(bytes[4] & 255) << 32;
-  n += (int64_t)(bytes[5] & 255) << 40;
-  n += (int64_t)(bytes[6] & 255) << 48;
-  n += (int64_t)(bytes[7] & 255) << 56;
-  return n;
-}
-
 void TitanTableBuilder::AddBlob(const ParsedInternalKey& ikey,
                                 const Slice& value) {
   if (!ok()) return;
@@ -203,9 +179,7 @@ void TitanTableBuilder::AddBlob(const ParsedInternalKey& ikey,
   // Parse ttl from value and append it to key index
   const char* pd = value.data_;
   size_t len = value.size(); 
-  // Last 8 byte of value is ttl
-  ctx->new_blob_index.ttl = littleBytesToLong(pd + (len - 8), 8);
-  std::cout << "value ttl is " << ctx->new_blob_index.ttl << std::endl;
+  ctx->new_blob_index.ttl = ParseTTL(pd, len);
 
   blob_builder_->Add(record, std::move(ctx), &contexts);
 

@@ -11,6 +11,8 @@ endif()
 if (NOT ROCKSDB_GIT_BRANCH)
   set(ROCKSDB_GIT_BRANCH "6.4.tikv")
 endif()
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
+
 
 if (NOT DEFINED ROCKSDB_DIR)
   if (GIT_FOUND)

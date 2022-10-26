@@ -3,6 +3,7 @@
 #include "test_util/sync_point.h"
 #include "util/crc32c.h"
 
+
 namespace rocksdb {
 namespace titandb {
 
@@ -16,6 +17,43 @@ bool GetChar(Slice* src, unsigned char* value) {
 }
 
 }  // namespace
+
+
+void PutFixed64BE(std::string* dst, uint64_t value) {
+    char buf[sizeof(value)];
+    buf[0] = (value >> 56) & 0xff;
+    buf[1] = (value >> 48) & 0xff;
+    buf[2] = (value >> 40) & 0xff;
+    buf[3] = (value >> 32) & 0xff;
+    buf[4] = (value >> 24) & 0xff;
+    buf[5] = (value >> 16) & 0xff;
+    buf[6] = (value >> 8) & 0xff;
+    buf[7] = (value) & 0xff;
+
+    dst->append(buf, sizeof(buf));
+}
+
+uint64_t DecodeFixed64BE(const char* bytes) {
+  uint64_t n = 0;
+  n += (uint64_t)(bytes[0] & 0xff) << 56;
+  n += (uint64_t)(bytes[1] & 0xff) << 48;
+  n += (uint64_t)(bytes[2] & 0xff) << 40;
+  n += (uint64_t)(bytes[3] & 0xff) << 32;
+  n += (uint64_t)(bytes[4] & 0xff) << 24;
+  n += (uint64_t)(bytes[5] & 0xff) << 16;
+  n += (uint64_t)(bytes[6] & 0xff) << 8;
+  n += (uint64_t)(bytes[7] & 0xff);
+  return n;
+}
+
+bool GetFixed64BE(Slice* input, uint64_t* value) {
+  if (input->size() < sizeof(uint64_t)) {
+    return false;
+  }
+  *value = DecodeFixed64BE(input->data());
+  input->remove_prefix(sizeof(uint64_t));
+  return true;
+}
 
 void BlobRecord::EncodeTo(std::string* dst) const {
   PutLengthPrefixedSlice(dst, key);
@@ -113,7 +151,7 @@ void BlobIndex::EncodeTo(std::string* dst) const {
   dst->push_back(kBlobRecord);
   PutVarint64(dst, file_number);
   blob_handle.EncodeTo(dst);
-  PutFixed64(dst, ttl);
+  PutFixed64BE(dst, ttl);
 }
 
 Status BlobIndex::DecodeFrom(Slice* src) {
@@ -127,7 +165,7 @@ Status BlobIndex::DecodeFrom(Slice* src) {
     return Status::Corruption("BlobIndex", s.ToString());
   }
 
-  GetFixed64(src, &ttl);
+  GetFixed64BE(src, &ttl);
   return s;
 }
 

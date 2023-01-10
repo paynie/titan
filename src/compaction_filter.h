@@ -77,7 +77,19 @@ class TitanCompactionFilter final : public CompactionFilter {
       uint64_t ts = static_cast<uint64_t>(std::time(0));
       
       if(blob_index.ttl != 0 && blob_index.ttl < ts) {
-        TITAN_LOG_INFO(db_->db_options_.info_log, "Remove");
+        const char *p_key = key.data_;
+        int32_t key_size = key.size();
+        unsigned char *hex_str = new unsigned char[key_size * 2 + 1];
+        for(int i = 0; i < key_size * 2 + 1; i++) {
+          hex_str[i] = 0;
+        }
+
+        int *p_len = new int;
+        *p_len = key_size * 2 + 1;
+        TITAN_LOG_INFO(db_->db_options_.info_log, "Remove key [%s], ttl is [%lld]", hex_str, blob_index.ttl);
+        delete [] hex_str;
+        delete p_len;
+
         // has ttl and ttl < current ts, need remove
         return Decision::kRemove;
       }

@@ -7,7 +7,8 @@ namespace rocksdb
     // Transform bytes to long
     uint64_t BigBytesToLong(const char *bytes, int len)
     {
-      if(len < 8) {
+      if (len < 8)
+      {
         return 0;
       }
 
@@ -23,6 +24,36 @@ namespace rocksdb
       return n;
     }
 
+    int
+    byteToHexStr(unsigned char byte_arr[], int arr_len, unsigned char *HexStr, int *HexStrLen)
+    {
+      int i, index = 0;
+      for (i = 0; i < arr_len; i++)
+      {
+        char hex1;
+        char hex2;
+        int value = byte_arr[i];
+        int v1 = value / 16;
+        int v2 = value % 16;
+        if (v1 >= 0 && v1 <= 9)
+          hex1 = (char)(48 + v1);
+        else
+          hex1 = (char)(55 + v1);
+        if (v2 >= 0 && v2 <= 9)
+          hex2 = (char)(48 + v2);
+        else
+          hex2 = (char)(55 + v2);
+        if (*HexStrLen <= i)
+        {
+          return -1;
+        }
+        HexStr[index++] = hex1;
+        HexStr[index++] = hex2;
+      }
+      *HexStrLen = index;
+      return 0;
+    }
+
     uint64_t ParseTTL(const char *bytes, int len)
     {
       if (len < 8)
@@ -35,10 +66,11 @@ namespace rocksdb
 
     void longToBigBytes(uint64_t n, char *data, int len)
     {
-      if(len < 8) {
+      if (len < 8)
+      {
         return;
       }
-      
+
       data[0] = (char)(n >> 56 & 0xff);
       data[1] = (char)(n >> 48 & 0xff);
       data[2] = (char)(n >> 40 & 0xff);

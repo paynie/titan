@@ -43,6 +43,9 @@ class TitanCompactionFilter final : public CompactionFilter {
                     std::string *new_value,
                     std::string *skip_until) const override {
     if(enable_ttl_) {
+
+      TITAN_LOG_INFO(db_->db_options_.info_log, "enable ttl");
+
       if (value_type != kBlobIndex) {
         return original_filter_->FilterV3(level, key, seqno, value_type, value,
                                           new_value, skip_until);

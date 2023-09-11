@@ -249,17 +249,15 @@ Status BlobGCJob::DoRunGC() {
     assert(blob_file_handle);
     assert(blob_file_builder);
 
-    // Parse ttl from value
     BlobRecord blob_record;
     blob_record.key = gc_iter->key();
     blob_record.value = gc_iter->value();
+
+    // Parse ttl from value
     const char* pd = blob_record.value.data_;
     int32_t len = blob_record.value.size(); 
     uint64_t ttl = ParseTTL(pd, len);
 
-    BlobRecord blob_record;
-    blob_record.key = gc_iter->key();
-    blob_record.value = gc_iter->value();
     // count written bytes for new blob record,
     // blob index's size is counted in `RewriteValidKeyToLSM`
     metrics_.gc_bytes_written += blob_record.size();

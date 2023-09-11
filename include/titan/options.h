@@ -190,7 +190,7 @@ struct ImmutableTitanCFOptions {
         blob_file_discardable_ratio(opts.blob_file_discardable_ratio),
         merge_small_file_threshold(opts.merge_small_file_threshold),
         level_merge(opts.level_merge),
-        skip_value_in_compaction_filter(opts.skip_value_in_compaction_filter) 
+        skip_value_in_compaction_filter(opts.skip_value_in_compaction_filter), 
         enable_ttl(opts.enable_ttl) {}
 
   uint64_t min_blob_size;

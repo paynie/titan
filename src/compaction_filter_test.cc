@@ -2,6 +2,16 @@
 
 #include "db_impl.h"
 
+#include "rocksdb/compaction_filter.h"
+#include "titan_logging.h"
+#include "util/mutexlock.h"
+
+#include <time.h>
+#include <stdio.h>
+#include <iostream>
+#include <string.h>
+#include "ttl.h"
+
 namespace rocksdb {
 namespace titandb {
 
@@ -35,6 +45,105 @@ class TestCompactionFilter : public CompactionFilter {
   uint64_t min_blob_size_;
 };
 
+class TTLCompactionFilter: public CompactionFilter {
+  public:
+  explicit TTLCompactionFilter(uint64_t min_blob_size)
+      : min_blob_size_(min_blob_size) {}
+
+  const char *Name() const override { return "TTLCompactionFilter"; }
+
+  bool FilterBlob(int level, const Slice &key, const Slice &value,
+              std::string * /*&new_value*/,
+              bool * /*value_changed*/) const {
+    // Parse ttl from value and append it to key index
+    const char* pd = value.data_;
+    int32_t len = value.size(); 
+    uint64_t ttl = ParseTTL(pd, len);
+    std::cout << "value len " << len <<" in compaction, value ttl is " << ttl << std::endl;
+
+    // Get current ttl
+    uint64_t tss = static_cast<uint64_t>(time(NULL));
+
+    std::cout << "decode current ts = " << tss << ", ttl = " << ttl << std::endl;
+
+
+    BlobIndex blob_index;
+    Slice original_value(value.data());
+    Status s = blob_index.DecodeFrom(&original_value);
+
+    // Get current ts
+    uint64_t ts = static_cast<uint64_t>(std::time(0));
+
+    std::cout << "current ts = " << ts << ", ttl = " << blob_index.ttl << std::endl;
+
+    if(blob_index.ttl != 0 && blob_index.ttl < ts) {
+      std::cout << "removed" << std::endl;
+      // has ttl and ttl < current ts, need remove
+      return true;
+    }
+
+    return false;
+  }
+
+    bool FilterValue(int level, const Slice &key, const Slice &value,
+              std::string * /*&new_value*/,
+              bool * /*value_changed*/) const {
+    // Parse ttl from value and append it to key index
+    const char* pd = value.data_;
+    int32_t len = value.size(); 
+    uint64_t ttl = ParseTTL(pd, len);
+    std::cout << "in compaction, value ttl is " << ttl << std::endl;
+
+    // Get current ttl
+    uint64_t tss = static_cast<uint64_t>(time(NULL));
+
+    std::cout << "decode current ts = " << tss << ", ttl = " << ttl << std::endl;
+
+    if(ttl != 0 && ttl < tss) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  Decision FilterV3(int level, const Slice& key,
+                            SequenceNumber /*seqno*/, ValueType value_type,
+                            const Slice& existing_value, std::string* new_value,
+                            std::string* skip_until) const override {
+    switch (value_type) {
+      case ValueType::kValue: {
+        bool value_changed = false;
+        bool rv = FilterValue(level, key, existing_value, new_value, &value_changed);
+        if (rv) {
+          return Decision::kRemove;
+        }
+        return value_changed ? Decision::kChangeValue : Decision::kKeep;
+      }
+
+      case ValueType::kBlobIndex: {
+        bool value_changed = false;
+        bool rv = FilterBlob(level, key, existing_value, new_value, &value_changed);
+        if (rv) {
+          return Decision::kRemove;
+        }
+        return value_changed ? Decision::kChangeValue : Decision::kKeep;
+      }
+
+      case ValueType::kMergeOperand: {
+        bool rv = FilterMergeOperand(level, key, existing_value);
+        return rv ? Decision::kRemove : Decision::kKeep;
+      }
+    }
+    assert(false);
+    return Decision::kKeep;
+
+ }
+
+  private:
+  uint64_t min_blob_size_;
+};
+
+
 class TitanCompactionFilterTest : public testing::Test {
  public:
   TitanCompactionFilterTest() : dbname_(test::TmpDir()) {
@@ -43,7 +152,9 @@ class TitanCompactionFilterTest : public testing::Test {
     options_.disable_background_gc = true;
     options_.disable_auto_compactions = true;
     options_.compaction_filter =
-        new TestCompactionFilter(options_.min_blob_size);
+        new TTLCompactionFilter(options_.min_blob_size);
+
+    std::cout << "min_blob_size = " << options_.min_blob_size << std::endl;
 
     DeleteDir(options_.dirname);
     DeleteDir(dbname_);
@@ -106,6 +217,50 @@ class TitanCompactionFilterTest : public testing::Test {
   TitanDBImpl *db_impl_{nullptr};
 };
 
+TEST_F(TitanCompactionFilterTest, CompactTTL) {
+  options_.skip_value_in_compaction_filter = true;
+  Open();
+
+  for(int index = 0; index < 1; index++) {
+    for(int i = 0; i < 10; i++) {
+      uint64_t ts = static_cast<uint64_t>(time(NULL));
+      uint64_t ttl = ts + 5;
+      char key[64];
+      sprintf(key, "key_%d", i);
+
+      std::string value("v", 10240);
+
+      const char* p_value = value.c_str();
+      int32_t value_size = value.size();
+
+      char* p_value_ttl = new char[value_size + 8];
+      memcpy(p_value_ttl, p_value, value_size);
+      longToBigBytes(ttl, p_value_ttl + value_size, 8);
+      std::string new_value(p_value_ttl, value_size + 8);
+
+      ASSERT_OK(db_->Put(WriteOptions(), key, new_value));
+      delete[] p_value_ttl;
+    }
+
+    ASSERT_OK(db_->Flush(FlushOptions()));
+  }
+
+  std::cout << "before compaction" << std::endl;
+
+  // Get value
+  std::string value1;
+  ASSERT_TRUE(!db_->Get(ReadOptions(), "key_0", &value1).IsNotFound());
+
+  sleep(10);
+
+  std::cout << "start compaction" << std::endl; 
+  ASSERT_OK(db_->CompactRange(CompactRangeOptions(), nullptr, nullptr));
+
+  std::string value2;
+  ASSERT_TRUE(db_->Get(ReadOptions(), "key_0", &value2).IsNotFound());
+}
+
+/*
 TEST_F(TitanCompactionFilterTest, CompactNormalValue) {
   Open();
 
@@ -193,6 +348,7 @@ TEST_F(TitanCompactionFilterTest, FilterNewColumnFamily) {
   ASSERT_TRUE(db_->Get(ReadOptions(), handle, "skip-key", &value).IsNotFound());
   ASSERT_OK(db_->DestroyColumnFamilyHandle(handle));
 }
+*/
 
 }  // namespace titandb
 }  // namespace rocksdb

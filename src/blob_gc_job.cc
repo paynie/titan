@@ -9,6 +9,8 @@
 
 #include "titan_logging.h"
 
+#include "ttl.h"
+
 namespace rocksdb {
 namespace titandb {
 
@@ -247,6 +249,11 @@ Status BlobGCJob::DoRunGC() {
     assert(blob_file_handle);
     assert(blob_file_builder);
 
+    // Parse ttl from value
+    const char* pd = blob_record.value.data_;
+    int32_t len = blob_record.value.size(); 
+    uint64_t ttl = ParseTTL(pd, len);
+
     BlobRecord blob_record;
     blob_record.key = gc_iter->key();
     blob_record.value = gc_iter->value();
@@ -262,6 +269,8 @@ Status BlobGCJob::DoRunGC() {
     ctx->key = ikey.Encode().ToString();
     ctx->original_blob_index = blob_index;
     ctx->new_blob_index.file_number = blob_file_handle->GetNumber();
+    ctx->original_blob_index.ttl = ttl;
+    ctx->new_blob_index.ttl = ttl;
 
     BlobFileBuilder::OutContexts contexts;
     blob_file_builder->Add(blob_record, std::move(ctx), &contexts);
@@ -297,6 +306,7 @@ void BlobGCJob::BatchWriteNewIndices(BlobFileBuilder::OutContexts& contexts,
     BlobIndex blob_index;
     blob_index.file_number = ctx->new_blob_index.file_number;
     blob_index.blob_handle = ctx->new_blob_index.blob_handle;
+    blob_index.ttl = ctx->new_blob_index.ttl;
 
     std::string index_entry;
     BlobIndex original_index = ctx->original_blob_index;

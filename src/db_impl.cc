@@ -293,7 +293,7 @@ Status TitanDBImpl::OpenImpl(const std::vector<TitanCFDescriptor>& descs,
       std::shared_ptr<TitanCompactionFilterFactory> titan_cf_factory =
           std::make_shared<TitanCompactionFilterFactory>(
               cf_opts.compaction_filter, cf_opts.compaction_filter_factory,
-              this, desc.options.skip_value_in_compaction_filter, desc.name);
+              this, desc.options.skip_value_in_compaction_filter, desc.options.enable_ttl, desc.name);
       cf_opts.compaction_filter = nullptr;
       cf_opts.compaction_filter_factory = titan_cf_factory;
     }

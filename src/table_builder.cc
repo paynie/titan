@@ -10,6 +10,8 @@
 
 #include "titan_logging.h"
 
+#include "ttl.h"
+
 namespace rocksdb {
 namespace titandb {
 
@@ -174,6 +176,12 @@ void TitanTableBuilder::AddBlob(const ParsedInternalKey& ikey,
       new BlobFileBuilder::BlobRecordContext);
   AppendInternalKey(&ctx->key, ikey);
   ctx->new_blob_index.file_number = blob_handle_->GetNumber();
+
+  // Parse ttl from value and append it to key index
+  const char* pd = value.data_;
+  size_t len = value.size(); 
+  ctx->new_blob_index.ttl = ParseTTL(pd, len);
+
   blob_builder_->Add(record, std::move(ctx), &contexts);
 
   UpdateIOBytes(prev_bytes_read, prev_bytes_written, &io_bytes_read_,

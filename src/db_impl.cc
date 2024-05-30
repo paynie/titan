@@ -758,6 +758,10 @@ std::vector<Status> TitanDBImpl::MultiGetImpl(
   return res;
 }
 
+Status TitanDBImpl::CheckInRange(const Slice* begin, const Slice* end) {
+  return db_impl_->CheckInRange(begin, end);
+}
+
 Iterator* TitanDBImpl::NewIterator(const TitanReadOptions& options,
                                    ColumnFamilyHandle* handle) {
   std::shared_ptr<ManagedSnapshot> snapshot;

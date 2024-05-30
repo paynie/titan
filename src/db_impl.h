@@ -132,6 +132,9 @@ class TitanDBImpl : public TitanDB {
                                const std::vector<Slice>& keys,
                                std::vector<std::string>* values) override;
 
+  using TitanDB::CheckInRange;
+  Status CheckInRange(const Slice* begin, const Slice* end) override;
+
   using TitanDB::NewIterator;
   Iterator* NewIterator(const TitanReadOptions& options,
                         ColumnFamilyHandle* handle) override;

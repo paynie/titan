@@ -240,6 +240,7 @@ Status TitanDBImpl::Open(const std::vector<TitanCFDescriptor>& descs,
 
 Status TitanDBImpl::OpenImpl(const std::vector<TitanCFDescriptor>& descs,
                              std::vector<ColumnFamilyHandle*>* handles) {
+  std::cout << "In OpenImpl" << std::endl;
   Status s = ValidateOptions(db_options_, descs);
   if (!s.ok()) {
     return s;

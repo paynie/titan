@@ -28,6 +28,8 @@
 #include "titan_logging.h"
 #include "titan_stats.h"
 
+#include <iostream>
+
 namespace rocksdb {
 namespace titandb {
 

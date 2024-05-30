@@ -65,8 +65,6 @@ class TitanCompactionFilter final : public CompactionFilter {
     }
 
     if (enable_ttl_) {
-
-
       if (skip_value_) {
         return original_filter_->UnsafeFilter(level, user_key, seqno, value_type,
                                               Slice(), new_value, skip_until);
@@ -82,7 +80,7 @@ class TitanCompactionFilter final : public CompactionFilter {
 
       BlobIndex blob_index;
       Slice original_value(value.data(), len);
-      Status s = blob_index.DecodeFrom(&original_value);
+      s = blob_index.DecodeFrom(&original_value);
 
       if(blob_index.ttl < ttl) {
         blob_index.ttl = ttl;

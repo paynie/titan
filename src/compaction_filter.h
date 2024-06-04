@@ -85,7 +85,7 @@ class TitanCompactionFilter final : public CompactionFilter {
       Slice original_value(value.data(), len);
       s = blob_index.DecodeFrom(&original_value);
 
-      TITAN_LOG_INFO(db_->db_options_.info_log, "ttl = %llu, ttl in blob index = %llu", ttl, blob_index.ttl);
+      TITAN_LOG_INFO(db_->db_options_.info_log, "ttl = %lu, ttl in blob index = %lu", ttl, blob_index.ttl);
 
       if(blob_index.ttl < ttl) {
         blob_index.ttl = ttl;
@@ -108,7 +108,7 @@ class TitanCompactionFilter final : public CompactionFilter {
       uint64_t ts = static_cast<uint64_t>(std::time(0));
 
       if(blob_index.ttl != 0 && blob_index.ttl < ts) {
-        TITAN_LOG_INFO(db_->db_options_.info_log, "Remove, ts = %llu, ttl = %llu", ts, blob_index.ttl);
+        TITAN_LOG_INFO(db_->db_options_.info_log, "Remove, ts = %lu, ttl = %lu", ts, blob_index.ttl);
         // has ttl and ttl < current ts, need remove
         return Decision::kRemove;
       }

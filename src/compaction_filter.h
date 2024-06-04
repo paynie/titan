@@ -31,6 +31,9 @@ class TitanCompactionFilter final : public CompactionFilter {
                          .append(original_filter_->Name())) {
     assert(blob_storage_ != nullptr);
     assert(original_filter_ != nullptr);
+
+    TITAN_LOG_INFO(db_->db_options_.info_log,
+                    "titian filter name = %s, original filter name = %s", filter_name_, original_filter_->Name());
   }
 
   const char *Name() const override { return filter_name_.c_str(); }
@@ -82,6 +85,8 @@ class TitanCompactionFilter final : public CompactionFilter {
       Slice original_value(value.data(), len);
       s = blob_index.DecodeFrom(&original_value);
 
+      TITAN_LOG_INFO(db_->db_options_.info_log, "ttl = %lld, ttl in blob index = %lld", ttl, blob_index.ttl);
+
       if(blob_index.ttl < ttl) {
         blob_index.ttl = ttl;
       }
@@ -103,7 +108,7 @@ class TitanCompactionFilter final : public CompactionFilter {
       uint64_t ts = static_cast<uint64_t>(std::time(0));
 
       if(blob_index.ttl != 0 && blob_index.ttl < ts) {
-        TITAN_LOG_INFO(db_->db_options_.info_log, "Remove");
+        TITAN_LOG_INFO(db_->db_options_.info_log, "Remove, ts = %lld, ttl = %lld", ts, blob_index.ttl);
         // has ttl and ttl < current ts, need remove
         return Decision::kRemove;
       }

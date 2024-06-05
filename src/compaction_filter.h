@@ -215,7 +215,7 @@ class TitanCompactionFilterFactory final : public CompactionFilterFactory {
     } else {
       factory_name_ = std::string("TitanCompactionFilterFactory.")
                           .append(original_filter_factory_->Name());
-      TITAN_LOG_INFO(db_->db_options_.info_log, "In TitanCompactionFilterFactory, factory_name_ = %s", factory_name_.c_str());
+      TITAN_LOG_INFO(titan_db_impl_->db_options_.info_log, "In TitanCompactionFilterFactory, factory_name_ = %s", factory_name_.c_str());
     }
   }
 
@@ -223,7 +223,7 @@ class TitanCompactionFilterFactory final : public CompactionFilterFactory {
 
   std::unique_ptr<CompactionFilter> CreateCompactionFilter(
       const CompactionFilter::Context &context) override {
-    TITAN_LOG_INFO(db_->db_options_.info_log, "In CreateCompactionFilter");
+    TITAN_LOG_INFO(titan_db_impl_->db_options_.info_log, "In CreateCompactionFilter");
     assert(original_filter_ != nullptr || original_filter_factory_ != nullptr);
 
     std::shared_ptr<BlobStorage> blob_storage;
@@ -241,18 +241,18 @@ class TitanCompactionFilterFactory final : public CompactionFilterFactory {
 
     const CompactionFilter *original_filter = original_filter_;
     std::unique_ptr<CompactionFilter> original_filter_from_factory;
-    TITAN_LOG_INFO(db_->db_options_.info_log, "In CreateCompactionFilter, before original_filter == nullptr1");
+    TITAN_LOG_INFO(titan_db_impl_->db_options_.info_log, "In CreateCompactionFilter, before original_filter == nullptr1");
     if (original_filter == nullptr) {
       original_filter_from_factory =
           original_filter_factory_->CreateCompactionFilter(context);
       original_filter = original_filter_from_factory.get();
     }
-    TITAN_LOG_INFO(db_->db_options_.info_log, "In CreateCompactionFilter, before original_filter == nullptr2");
+    TITAN_LOG_INFO(titan_db_impl_->db_options_.info_log, "In CreateCompactionFilter, before original_filter == nullptr2");
     if (original_filter == nullptr) {
       return nullptr;
     }
 
-    TITAN_LOG_INFO(db_->db_options_.info_log, "In CreateCompactionFilter, before TitanCompactionFilter");
+    TITAN_LOG_INFO(titan_db_impl_->db_options_.info_log, "In CreateCompactionFilter, before TitanCompactionFilter");
     return std::unique_ptr<CompactionFilter>(new TitanCompactionFilter(
         titan_db_impl_, cf_name_, original_filter,
         std::move(original_filter_from_factory), blob_storage, skip_value_, enable_ttl_));

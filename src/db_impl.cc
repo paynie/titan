@@ -364,6 +364,7 @@ Status TitanDBImpl::OpenImpl(const std::vector<TitanCFDescriptor>& descs,
   db_->EnableAutoCompaction(cf_with_compaction);
   StartBackgroundTasks();
   // Dump options.
+  TITAN_LOG_INFO(db_options_.info_log, "paynie add Titan DB open.");
   TITAN_LOG_INFO(db_options_.info_log, "Titan DB open.");
   TITAN_LOG_HEADER(db_options_.info_log, "Titan git sha: %s",
                    titan_build_git_sha);

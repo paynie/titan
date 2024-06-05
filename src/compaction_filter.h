@@ -71,18 +71,16 @@ class TitanCompactionFilter final : public CompactionFilter {
     }
 
     if (enable_ttl_) {
-      TITAN_LOG_INFO(db_->db_options_.info_log, "In UnsafeFilter, enable_ttl_");
       if (skip_value_) {
-        TITAN_LOG_INFO(db_->db_options_.info_log, "In UnsafeFilter, skip_value_");
         return original_filter_->UnsafeFilter(level, user_key, seqno, value_type,
                                               Slice(), new_value, skip_until);
       }
+
       if (value_type != kBlobIndex) {
-        TITAN_LOG_INFO(db_->db_options_.info_log, "In UnsafeFilter, value_type != kBlobIndex");
         return original_filter_->UnsafeFilter(level, user_key, seqno, value_type,
                                               value, new_value, skip_until);
       }
-      TITAN_LOG_INFO(db_->db_options_.info_log, "In UnsafeFilter, value_type=kBlobIndex");
+
       const char* pd = value.data_;
       int32_t len = value.size();
       uint64_t ttl = ParseTTL(pd, len);

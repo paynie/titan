@@ -33,7 +33,6 @@ class TitanCompactionFilter final : public CompactionFilter {
     assert(blob_storage_ != nullptr);
     assert(original_filter_ != nullptr);
 
-    std::cout << "paynie add  in  TitanCompactionFilter" << std::endl;
     TITAN_LOG_INFO(db_->db_options_.info_log,
                     "titian filter name = %s, original filter name = %s", filter_name_.c_str(), original_filter_->Name());
   }
@@ -49,7 +48,6 @@ class TitanCompactionFilter final : public CompactionFilter {
 
     Status s;
     Slice user_key = key;
-    TITAN_LOG_INFO(db_->db_options_.info_log, "In UnsafeFilter");
 
     // Since IsStackedBlobDbInternalCompactionFilter was implemented as true,
     // the key is an internal key when value_type is kBlobIndex, which is caused
@@ -81,12 +79,8 @@ class TitanCompactionFilter final : public CompactionFilter {
                                               value, new_value, skip_until);
       }
 
-      const char* pd = value.data_;
-      int32_t len = value.size();
-      uint64_t ttl = ParseTTL(pd, len);
-
       BlobIndex blob_index;
-      Slice original_value(value.data(), len);
+      Slice original_value(value.data(), value.size());
       s = blob_index.DecodeFrom(&original_value);
 
       if (!s.ok()) {
@@ -102,24 +96,16 @@ class TitanCompactionFilter final : public CompactionFilter {
         return Decision::kKeep;
       }
 
-      TITAN_LOG_INFO(db_->db_options_.info_log, "ttl = %lu, ttl in blob index = %lu", ttl, blob_index.ttl);
-
-      if(blob_index.ttl < ttl) {
-        blob_index.ttl = ttl;
-      }
-
       // Get current ts
       uint64_t ts = static_cast<uint64_t>(std::time(0));
 
       if(blob_index.ttl != 0 && blob_index.ttl < ts) {
-        TITAN_LOG_INFO(db_->db_options_.info_log, "Remove, ts = %lu, ttl = %lu", ts, blob_index.ttl);
         // has ttl and ttl < current ts, need remove
         return Decision::kRemove;
       }
 
       return Decision::kKeep;
     } else {
-      TITAN_LOG_INFO(db_->db_options_.info_log, "In UnsafeFilter, not enable_ttl_");
       if (skip_value_) {
         return original_filter_->UnsafeFilter(level, user_key, seqno, value_type,
                                               Slice(), new_value, skip_until);
@@ -213,7 +199,6 @@ class TitanCompactionFilterFactory final : public CompactionFilterFactory {
     } else {
       factory_name_ = std::string("TitanCompactionFilterFactory.")
                           .append(original_filter_factory_->Name());
-      TITAN_LOG_INFO(titan_db_impl_->db_options_.info_log, "In TitanCompactionFilterFactory, factory_name_ = %s", factory_name_.c_str());
     }
   }
 
@@ -221,7 +206,6 @@ class TitanCompactionFilterFactory final : public CompactionFilterFactory {
 
   std::unique_ptr<CompactionFilter> CreateCompactionFilter(
       const CompactionFilter::Context &context) override {
-    TITAN_LOG_INFO(titan_db_impl_->db_options_.info_log, "In CreateCompactionFilter");
     assert(original_filter_ != nullptr || original_filter_factory_ != nullptr);
 
     std::shared_ptr<BlobStorage> blob_storage;
@@ -239,18 +223,16 @@ class TitanCompactionFilterFactory final : public CompactionFilterFactory {
 
     const CompactionFilter *original_filter = original_filter_;
     std::unique_ptr<CompactionFilter> original_filter_from_factory;
-    TITAN_LOG_INFO(titan_db_impl_->db_options_.info_log, "In CreateCompactionFilter, before original_filter == nullptr1");
     if (original_filter == nullptr) {
       original_filter_from_factory =
           original_filter_factory_->CreateCompactionFilter(context);
       original_filter = original_filter_from_factory.get();
     }
-    TITAN_LOG_INFO(titan_db_impl_->db_options_.info_log, "In CreateCompactionFilter, before original_filter == nullptr2");
+
     if (original_filter == nullptr) {
       return nullptr;
     }
 
-    TITAN_LOG_INFO(titan_db_impl_->db_options_.info_log, "In CreateCompactionFilter, before TitanCompactionFilter");
     return std::unique_ptr<CompactionFilter>(new TitanCompactionFilter(
         titan_db_impl_, cf_name_, original_filter,
         std::move(original_filter_from_factory), blob_storage, skip_value_, enable_ttl_));

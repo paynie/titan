@@ -5,8 +5,7 @@ namespace rocksdb
   namespace titandb
   {
     // Transform bytes to long
-    uint64_t BigBytesToLong(const char *bytes, int len)
-    {
+    uint64_t BigBytesToLong(const char *bytes, int len) {
       if(len < 8) {
         return 0;
       }
@@ -23,8 +22,7 @@ namespace rocksdb
       return n;
     }
 
-    uint64_t ParseTTL(const char *bytes, int len)
-    {
+    uint64_t ParseTTL(const char *bytes, int len) {
       if (len < 8)
       {
         return 0;
@@ -33,8 +31,7 @@ namespace rocksdb
       return BigBytesToLong(bytes + (len - 8), 8);
     }
 
-    void longToBigBytes(uint64_t n, char *data, int len)
-    {
+    void longToBigBytes(uint64_t n, char *data, int len) {
       if(len < 8) {
         return;
       }
@@ -51,8 +48,7 @@ namespace rocksdb
 
     int byteToHexStr(unsigned char byte_arr[], int arr_len, unsigned char *HexStr, int *HexStrLen) {
       int i, index = 0;
-      for (i = 0; i < arr_len; i++)
-      {
+      for (i = 0; i < arr_len; i++) {
         char hex1;
         char hex2;
         int value = byte_arr[i];

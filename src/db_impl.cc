@@ -293,6 +293,7 @@ Status TitanDBImpl::OpenImpl(const std::vector<TitanCFDescriptor>& descs,
     cf_opts.table_factory = titan_table_factories.back();
     if (cf_opts.compaction_filter != nullptr ||
         cf_opts.compaction_filter_factory != nullptr) {
+      TITAN_LOG_INFO(db_options_.info_log, "paynie add before init titan_cf_factory");
       std::shared_ptr<TitanCompactionFilterFactory> titan_cf_factory =
           std::make_shared<TitanCompactionFilterFactory>(
               cf_opts.compaction_filter, cf_opts.compaction_filter_factory,

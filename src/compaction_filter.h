@@ -8,6 +8,7 @@
 #include "titan_logging.h"
 #include "util/mutexlock.h"
 #include "ttl.h"
+#include <iostream>
 
 namespace rocksdb {
 namespace titandb {
@@ -32,6 +33,7 @@ class TitanCompactionFilter final : public CompactionFilter {
     assert(blob_storage_ != nullptr);
     assert(original_filter_ != nullptr);
 
+    std::cout << "paynie add  in  TitanCompactionFilter" << std::endl;
     TITAN_LOG_INFO(db_->db_options_.info_log,
                     "titian filter name = %s, original filter name = %s", filter_name_.c_str(), original_filter_->Name());
   }

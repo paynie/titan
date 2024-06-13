@@ -269,15 +269,21 @@ Status TitanDBImpl::BackgroundGC(LogBuffer* log_buffer,
                           blob_file_set_.get(), log_buffer, &shuting_down_,
                           stats_.get());
     s = blob_gc_job.Prepare();
+    TITAN_LOG_INFO(db_options_.info_log,
+                   "BackgroundGC, Prepare state = %s", s.ToString().c_str());
     if (s.ok()) {
       mutex_.Unlock();
       TEST_SYNC_POINT("TitanDBImpl::BackgroundGC::BeforeRunGCJob");
       s = blob_gc_job.Run();
+      TITAN_LOG_INFO(db_options_.info_log,
+                     "BackgroundGC, Run state = %s", s.ToString().c_str());
       TEST_SYNC_POINT("TitanDBImpl::BackgroundGC::AfterRunGCJob");
       mutex_.Lock();
     }
     if (s.ok()) {
       s = blob_gc_job.Finish();
+      TITAN_LOG_INFO(db_options_.info_log,
+                     "BackgroundGC, Finish state = %s", s.ToString().c_str());
     }
     blob_gc->ReleaseGcFiles();
 

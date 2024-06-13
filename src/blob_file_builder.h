@@ -124,6 +124,7 @@ class BlobFileBuilder {
   void FlushSampleRecords(OutContexts* out_ctx);
   void WriteEncoderData(BlobHandle* handle);
 
+  TitanDBOptions db_options_;
   TitanCFOptions cf_options_;
   WritableFileWriter* file_;
   const uint32_t blob_file_version_;

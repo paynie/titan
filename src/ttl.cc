@@ -4,6 +4,20 @@ namespace rocksdb
 {
   namespace titandb
   {
+    std::string get_b2hex(const char * source, int len)
+    {
+      std::string strHexPack;
+      for (int i = 0; i < len; ++i)
+      {
+        unsigned char c = source[i];
+        unsigned int nIntVal = c;
+        char hex_buf[10] = {0};
+        sprintf(hex_buf, "%02X", nIntVal);
+        strHexPack += hex_buf;
+      }
+      return strHexPack;
+    }
+
     // Transform bytes to long
     uint64_t BigBytesToLong(const char *bytes, int len) {
       if(len < 8) {

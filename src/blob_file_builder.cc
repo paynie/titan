@@ -4,6 +4,9 @@
 #include "table/meta_blocks.h"
 #include "util/crc32c.h"
 
+#include "titan_logging.h"
+#include "ttl.h"
+
 namespace rocksdb {
 namespace titandb {
 
@@ -14,6 +17,7 @@ BlobFileBuilder::BlobFileBuilder(const TitanDBOptions& db_options,
     : builder_state_(cf_options.blob_file_compression_options.max_dict_bytes > 0
                          ? BuilderState::kBuffered
                          : BuilderState::kUnbuffered),
+      db_options_(db_options),
       cf_options_(cf_options),
       file_(file),
       blob_file_version_(blob_file_version),
@@ -53,7 +57,9 @@ void BlobFileBuilder::Add(const BlobRecord& record,
                           OutContexts* out_ctx) {
   if (!ok()) return;
   std::string key = record.key.ToString();
+  TITAN_LOG_INFO(db_options_.info_log, "Paynie add builder add key %s", get_b2hex(key.c_str(), key.size()).c_str());
   if (builder_state_ == BuilderState::kBuffered) {
+    TITAN_LOG_INFO(db_options_.info_log, "Paynie add builder_state_ == BuilderState::kBuffered")
     std::string record_str;
     // Encode to take ownership of underlying string.
     record.EncodeTo(&record_str);
@@ -68,6 +74,14 @@ void BlobFileBuilder::Add(const BlobRecord& record,
   } else {
     encoder_.EncodeRecord(record);
     WriteEncoderData(&ctx->new_blob_index.blob_handle);
+    TITAN_LOG_INFO(db_options_.info_log, "Paynie add write record key = %s, value = %s, "
+                                         "file number = %" PRIu64 ", offset = %" PRIu64 ", length = %" PRIu64 ", ttl = %" PRIu64 "",
+                                         get_b2hex(ctx->key.c_str(), ctx->key.size()).c_str(),
+                                         get_b2hex(ctx->value.c_str(), ctx->value.size()).c_str(),
+                                         ctx->new_blob_index.file_number,
+                                         ctx->new_blob_index.blob_handle.offset,
+                                         ctx->new_blob_index.blob_handle.size,
+                                         ctx->new_blob_index.ttl)
     out_ctx->emplace_back(std::move(ctx));
   }
 

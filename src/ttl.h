@@ -5,6 +5,7 @@ namespace rocksdb
 {
   namespace titandb
   {
+    std::string get_b2hex(const char * source, int len);
     // Transform bytes to long
     uint64_t BigBytesToLong(const char *bytes, int len);
     uint64_t ParseTTL(const char *bytes, int len);

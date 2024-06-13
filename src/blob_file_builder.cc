@@ -81,7 +81,7 @@ void BlobFileBuilder::Add(const BlobRecord& record,
                                          ctx->new_blob_index.file_number,
                                          ctx->new_blob_index.blob_handle.offset,
                                          ctx->new_blob_index.blob_handle.size,
-                                         ctx->new_blob_index.ttl)
+                                         ctx->new_blob_index.ttl);
     out_ctx->emplace_back(std::move(ctx));
   }
 

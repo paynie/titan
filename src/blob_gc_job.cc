@@ -416,7 +416,7 @@ Status BlobGCJob::DiscardEntry(const Slice& key, const BlobIndex& blob_index,
   BlobIndex other_blob_index;
   s = other_blob_index.DecodeFrom(&index_entry);
   if (!s.ok()) {
-    TITAN_LOG_INFO(db_options_.info_log, "Paynie add DiscardEntry decode index failed, status = %s", s->ToString().c_str());
+    TITAN_LOG_INFO(db_options_.info_log, "Paynie add DiscardEntry decode index failed, status = %s", s.ToString().c_str());
     return s;
   }
 

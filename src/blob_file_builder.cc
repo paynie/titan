@@ -77,7 +77,7 @@ void BlobFileBuilder::Add(const BlobRecord& record,
     TITAN_LOG_INFO(db_options_.info_log, "Paynie add write record key = %s, value = %s, "
                                          "file number = %" PRIu64 ", offset = %" PRIu64 ", length = %" PRIu64 ", ttl = %" PRIu64 "",
                                          get_b2hex(ctx->key.c_str(), ctx->key.size()).c_str(),
-                                         get_b2hex(ctx->value.c_str(), ctx->value.size()).c_str(),
+                                         get_b2hex(record.value.data(), record.value.size()).c_str(),
                                          ctx->new_blob_index.file_number,
                                          ctx->new_blob_index.blob_handle.offset,
                                          ctx->new_blob_index.blob_handle.size,

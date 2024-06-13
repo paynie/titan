@@ -59,7 +59,7 @@ void BlobFileBuilder::Add(const BlobRecord& record,
   std::string key = record.key.ToString();
   TITAN_LOG_INFO(db_options_.info_log, "Paynie add builder add key %s", get_b2hex(key.c_str(), key.size()).c_str());
   if (builder_state_ == BuilderState::kBuffered) {
-    TITAN_LOG_INFO(db_options_.info_log, "Paynie add builder_state_ == BuilderState::kBuffered")
+    TITAN_LOG_INFO(db_options_.info_log, "Paynie add builder_state_ == BuilderState::kBuffered");
     std::string record_str;
     // Encode to take ownership of underlying string.
     record.EncodeTo(&record_str);

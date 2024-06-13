@@ -190,7 +190,7 @@ Status BlobGCJob::DoRunGC() {
                    blob_index.blob_handle.offset,
                    blob_index.blob_handle.size,
                    blob_index.ttl,
-                   get_b2hex(gc_iter->value(), gc_iter->value().size()).c_str());
+                   get_b2hex(gc_iter->value().data(), gc_iter->value().size()).c_str());
 
     if (!last_key.empty() && (gc_iter->key().compare(last_key) == 0)) {
       if (last_key_is_fresh) {
@@ -401,7 +401,7 @@ Status BlobGCJob::DiscardEntry(const Slice& key, const BlobIndex& blob_index,
   Status s = base_db_impl_->GetImpl(ReadOptions(), key, gopts);
 
   if (!s.ok() && !s.IsNotFound()) {
-    TITAN_LOG_INFO(db_options_.info_log, "Paynie add DiscardEntry get status = %s", s->ToString().c_str());
+    TITAN_LOG_INFO(db_options_.info_log, "Paynie add DiscardEntry get status = %s", s.ToString().c_str());
     return s;
   }
   // count read bytes for checking LSM entry
@@ -432,7 +432,7 @@ Status BlobGCJob::Finish() {
   {
     mutex_->Unlock();
     s = InstallOutputBlobFiles();
-    TITAN_LOG_INFO(db_options_.info_log, "Paynie add Finish InstallOutputBlobFiles status = %s", s->ToString().c_str());
+    TITAN_LOG_INFO(db_options_.info_log, "Paynie add Finish InstallOutputBlobFiles status = %s", s.ToString().c_str());
     if (s.ok()) {
       TEST_SYNC_POINT("BlobGCJob::Finish::BeforeRewriteValidKeyToLSM");
       s = RewriteValidKeyToLSM();
@@ -572,7 +572,7 @@ Status BlobGCJob::RewriteValidKeyToLSM() {
         metrics_.gc_bytes_fallback += write_batch.second.blob_record_size();
       }
     } else if (s.IsBusy()) {
-      TITAN_LOG_INFO(db_options_.info_log, "Paynie add s.IsBusy()")
+      TITAN_LOG_INFO(db_options_.info_log, "Paynie add s.IsBusy()");
       metrics_.gc_num_keys_overwritten++;
       metrics_.gc_bytes_overwritten += write_batch.second.blob_record_size();
       // The key is overwritten in the meanwhile. Drop the blob record.
@@ -582,7 +582,7 @@ Status BlobGCJob::RewriteValidKeyToLSM() {
       dropped[new_blob_index.file_number] += new_blob_index.blob_handle.size;
     } else {
       // We hit an error.
-      TITAN_LOG_INFO(db_options_.info_log, "Paynie add error")
+      TITAN_LOG_INFO(db_options_.info_log, "Paynie add error");
       break;
     }
     // count read bytes in write callback

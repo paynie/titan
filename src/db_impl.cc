@@ -735,8 +735,8 @@ Status TitanDBImpl::GetImpl(const ReadOptions& options,
   storage->GetAllFiles(&files);
   for(long unsigned int i = 0; i < files.size(); i++) {
     TITAN_LOG_INFO(db_options_.info_log,
-                   "Paynie add blob file %i name is %s",
-                   i, files[i].c_str()
+                   "Paynie add blob file name is %s",
+                   files[i].c_str()
     );
   }
 

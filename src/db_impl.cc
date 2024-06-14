@@ -695,14 +695,14 @@ Status TitanDBImpl::GetImpl(const ReadOptions& options,
   gopts.value = value;
   gopts.is_blob_index = &is_blob_index;
 
-  TITAN_LOG_INFO(db_->db_options_.info_log,
+  TITAN_LOG_INFO(db_options_.info_log,
                  "Paynie add before get value for key %s",
                  get_b2hex(key.data(), key.size()).c_str()
                  );
 
   s = db_impl_->GetImpl(options, key, gopts);
 
-  TITAN_LOG_INFO(db_->db_options_.info_log,
+  TITAN_LOG_INFO(db_options_.info_log,
                  "Paynie add after get value for key %s, status = %s",
                  get_b2hex(key.data(), key.size()).c_str(),
                  s.ToString().c_str()
@@ -717,7 +717,7 @@ Status TitanDBImpl::GetImpl(const ReadOptions& options,
   s = index.DecodeFrom(value);
   assert(s.ok());
 
-  TITAN_LOG_INFO(db_->db_options_.info_log,
+  TITAN_LOG_INFO(db_options_.info_log,
                  "Paynie add get value for key %s, file number = %" PRIu64 ", offset = %" PRIu64 ", size = %" PRIu64 ", ttl = %" PRIu64 "",
                  get_b2hex(key.data(), key.size()).c_str(),
                  index.file_number,
@@ -734,7 +734,7 @@ Status TitanDBImpl::GetImpl(const ReadOptions& options,
   std::vector<std::string> files;
   storage->GetAllFiles(&files);
   for(int i = 0; i < files.size(); i++) {
-    TITAN_LOG_INFO(db_->db_options_.info_log,
+    TITAN_LOG_INFO(db_options_.info_log,
                    "Paynie add blob file %i name is %s",
                    i, files[i].c_str()
     );
@@ -747,7 +747,7 @@ Status TitanDBImpl::GetImpl(const ReadOptions& options,
     BlobRecord record;
     s = storage->Get(options, index, &record, value);
 
-    TITAN_LOG_INFO(db_->db_options_.info_log,
+    TITAN_LOG_INFO(db_options_.info_log,
                    "Paynie add get value for key %s, value = %s",
                    get_b2hex(key.data(), key.size()).c_str(),
                    get_b2hex(value->data(), value->size()).c_str()

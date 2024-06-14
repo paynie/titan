@@ -733,7 +733,7 @@ Status TitanDBImpl::GetImpl(const ReadOptions& options,
 
   std::vector<std::string> files;
   storage->GetAllFiles(&files);
-  for(int i = 0; i < files.size(); i++) {
+  for(long unsigned int i = 0; i < files.size(); i++) {
     TITAN_LOG_INFO(db_options_.info_log,
                    "Paynie add blob file %i name is %s",
                    i, files[i].c_str()

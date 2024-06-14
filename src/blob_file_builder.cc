@@ -158,6 +158,8 @@ void BlobFileBuilder::WriteEncoderData(BlobHandle* handle) {
   handle->size = encoder_.GetEncodedSize();
   live_data_size_ += handle->size;
 
+  TITAN_LOG_INFO(db_options_.info_log, "Paynie add WriteEncoderData, file name = %s", file_->file_name().c_str());
+
   status_ = file_->Append(encoder_.GetHeader());
   if (ok()) {
     status_ = file_->Append(encoder_.GetRecord());

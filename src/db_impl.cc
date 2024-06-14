@@ -27,6 +27,7 @@
 #include "titan_build_version.h"
 #include "titan_logging.h"
 #include "titan_stats.h"
+#include "ttl.h"
 
 #include <iostream>
 
@@ -693,7 +694,19 @@ Status TitanDBImpl::GetImpl(const ReadOptions& options,
   gopts.column_family = handle;
   gopts.value = value;
   gopts.is_blob_index = &is_blob_index;
+
+  TITAN_LOG_INFO(db_->db_options_.info_log,
+                 "Paynie add before get value for key %s",
+                 get_b2hex(key.data(), key.size()).c_str()
+                 );
+
   s = db_impl_->GetImpl(options, key, gopts);
+
+  TITAN_LOG_INFO(db_->db_options_.info_log,
+                 "Paynie add after get value for key %s, status = %s",
+                 get_b2hex(key.data(), key.size()).c_str(),
+                 s.ToString().c_str()
+                 );
   if (!s.ok() || !is_blob_index) return s;
 
   StopWatch get_sw(env_->GetSystemClock().get(), statistics(stats_.get()),
@@ -703,16 +716,43 @@ Status TitanDBImpl::GetImpl(const ReadOptions& options,
   BlobIndex index;
   s = index.DecodeFrom(value);
   assert(s.ok());
+
+  TITAN_LOG_INFO(db_->db_options_.info_log,
+                 "Paynie add get value for key %s, file number = %" PRIu64 ", offset = %" PRIu64 ", size = %" PRIu64 ", ttl = %" PRIu64 "",
+                 get_b2hex(key.data(), key.size()).c_str(),
+                 index.file_number,
+                 index.blob_handle.offset,
+                 index.blob_handle.size,
+                 index.ttl
+  );
+
   if (!s.ok()) return s;
 
   auto storage =
       static_cast_with_check<TitanColumnFamilyHandle>(handle)->GetBlobStorage();
+
+  std::vector<std::string> files;
+  storage->GetAllFiles(&files);
+  for(int i = 0; i < files.size(); i++) {
+    TITAN_LOG_INFO(db_->db_options_.info_log,
+                   "Paynie add blob file %i name is %s",
+                   i, files[i].c_str()
+    );
+  }
+
   if (storage) {
     StopWatch read_sw(env_->GetSystemClock().get(), statistics(stats_.get()),
                       TITAN_BLOB_FILE_READ_MICROS);
     value->Reset();
     BlobRecord record;
     s = storage->Get(options, index, &record, value);
+
+    TITAN_LOG_INFO(db_->db_options_.info_log,
+                   "Paynie add get value for key %s, value = %s",
+                   get_b2hex(key.data(), key.size()).c_str(),
+                   get_b2hex(value->data(), value->size()).c_str()
+    );
+
     RecordTick(statistics(stats_.get()), TITAN_BLOB_FILE_NUM_KEYS_READ);
     RecordTick(statistics(stats_.get()), TITAN_BLOB_FILE_BYTES_READ,
                index.blob_handle.size);

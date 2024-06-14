@@ -243,7 +243,11 @@ Status TitanDBImpl::Open(const std::vector<TitanCFDescriptor>& descs,
 
 Status TitanDBImpl::OpenImpl(const std::vector<TitanCFDescriptor>& descs,
                              std::vector<ColumnFamilyHandle*>* handles) {
-  std::cout << "In OpenImpl" << std::endl;
+  TITAN_LOG_INFO(db_options_.info_log, "Titan DB open."
+                                       "db_dir = %s, db name = %s",
+                                       db_options_.dirname.c_str(),
+                                       dbname_.c_str());
+
   Status s = ValidateOptions(db_options_, descs);
   if (!s.ok()) {
     return s;
@@ -274,6 +278,7 @@ Status TitanDBImpl::OpenImpl(const std::vector<TitanCFDescriptor>& descs,
   // Note that info log is initialized after `CreateLoggerFromOptions`,
   // so new `BlobFileSet` here but not in constructor is to get a proper info
   // log.
+  TITAN_LOG_INFO(db_options_.info_log, "Paynie add reset blob_file_set_");
   blob_file_set_.reset(
       new BlobFileSet(db_options_, stats_.get(), &initialized_, &mutex_));
   // Setup options.
@@ -718,7 +723,8 @@ Status TitanDBImpl::GetImpl(const ReadOptions& options,
   assert(s.ok());
 
   TITAN_LOG_INFO(db_options_.info_log,
-                 "Paynie add get value for key %s, file number = %" PRIu64 ", offset = %" PRIu64 ", size = %" PRIu64 ", ttl = %" PRIu64 "",
+                 "Paynie add get value for key %s, file number = %" PRIu64 ", offset = %" PRIu64 ", "
+                 "size = %" PRIu64 ", ttl = %" PRIu64 "",
                  get_b2hex(key.data(), key.size()).c_str(),
                  index.file_number,
                  index.blob_handle.offset,
@@ -733,6 +739,12 @@ Status TitanDBImpl::GetImpl(const ReadOptions& options,
 
   std::vector<std::string> files;
   storage->GetAllFiles(&files);
+
+  TITAN_LOG_INFO(db_options_.info_log,
+                 "Paynie add blob storage dir is %s",
+                 storage->db_options().dirname.c_str()
+  );
+
   for(long unsigned int i = 0; i < files.size(); i++) {
     TITAN_LOG_INFO(db_options_.info_log,
                    "Paynie add blob file name is %s",

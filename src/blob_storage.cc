@@ -7,6 +7,11 @@ namespace rocksdb {
 namespace titandb {
 
 std::string BlobStorage::EncodeBlobCache(const BlobIndex& index) {
+  TITAN_LOG_INFO(db_options_.info_log, "Paynie add BlobStorage EncodeBlobCache cache prefix = %s, "
+                                       "file number = %" PRIu64 ", offset = %" PRIu64 "",
+                                       cache_prefix_.c_str(),
+                                       index.file_number,
+                                       index.blob_handle.offset);
   std::string cache_key(cache_prefix_);
   PutVarint64(&cache_key, index.file_number);
   PutVarint64(&cache_key, index.blob_handle.offset);
@@ -37,11 +42,16 @@ Status BlobStorage::TryGetBlobCache(const std::string& cache_key,
 Status BlobStorage::Get(const ReadOptions& options, const BlobIndex& index,
                         BlobRecord* record, PinnableSlice* value) {
   std::string cache_key;
+  TITAN_LOG_INFO(db_options_.info_log, "Paynie add BlobStorage get dir name = %s, cf id = %u",
+                 db_options_.dirname.c_str(),
+                 cf_id_);
 
   if (blob_cache_) {
+    TITAN_LOG_INFO(db_options_.info_log, "Paynie add BlobStorage get blob_cache_ = true");
     cache_key = EncodeBlobCache(index);
     bool cache_hit;
     Status s = TryGetBlobCache(cache_key, record, value, &cache_hit);
+    TITAN_LOG_INFO(db_options_.info_log, "Paynie add BlobStorage TryGetBlobCache status = %s", s.ToString().c_str());
     if (!s.ok()) return s;
     if (cache_hit) return s;
   }
@@ -49,6 +59,7 @@ Status BlobStorage::Get(const ReadOptions& options, const BlobIndex& index,
   OwnedSlice blob;
   Status s = file_cache_->Get(options, index.file_number, index.blob_handle,
                               record, &blob);
+  TITAN_LOG_INFO(db_options_.info_log, "Paynie add BlobStorage file_cache_->Get status = %s", s.ToString().c_str());
   if (!s.ok()) {
     return s;
   }

@@ -3,6 +3,7 @@
 #include "file/filename.h"
 
 #include "util.h"
+#include "titan_logging.h"
 
 namespace rocksdb {
 namespace titandb {
@@ -23,7 +24,13 @@ BlobFileCache::BlobFileCache(const TitanDBOptions& db_options,
       db_options_(db_options),
       cf_options_(cf_options),
       cache_(cache),
-      stats_(stats) {}
+      stats_(stats) {
+
+  TITAN_LOG_INFO(db_options_.info_log, "Create BlobFileCache"
+                                       "db_dir = %s",
+                 db_options_.dirname.c_str());
+
+}
 
 Status BlobFileCache::Get(const ReadOptions& options, uint64_t file_number,
                           const BlobHandle& handle, BlobRecord* record,

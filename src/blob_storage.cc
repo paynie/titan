@@ -46,15 +46,15 @@ Status BlobStorage::Get(const ReadOptions& options, const BlobIndex& index,
                  db_options_.dirname.c_str(),
                  cf_id_);
 
-  if (blob_cache_) {
-    TITAN_LOG_INFO(db_options_.info_log, "Paynie add BlobStorage get blob_cache_ = true");
-    cache_key = EncodeBlobCache(index);
-    bool cache_hit;
-    Status s = TryGetBlobCache(cache_key, record, value, &cache_hit);
-    TITAN_LOG_INFO(db_options_.info_log, "Paynie add BlobStorage TryGetBlobCache status = %s", s.ToString().c_str());
-    if (!s.ok()) return s;
-    if (cache_hit) return s;
-  }
+  //if (blob_cache_) {
+  //  TITAN_LOG_INFO(db_options_.info_log, "Paynie add BlobStorage get blob_cache_ = true");
+  //  cache_key = EncodeBlobCache(index);
+  //  bool cache_hit;
+  //  Status s = TryGetBlobCache(cache_key, record, value, &cache_hit);
+  //  TITAN_LOG_INFO(db_options_.info_log, "Paynie add BlobStorage TryGetBlobCache status = %s", s.ToString().c_str());
+  //  if (!s.ok()) return s;
+  //  if (cache_hit) return s;
+  //}
 
   OwnedSlice blob;
   Status s = file_cache_->Get(options, index.file_number, index.blob_handle,

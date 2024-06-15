@@ -1,6 +1,9 @@
 #pragma once
 #include <stdint.h>
 #include <string>
+#include <vector>
+#include <sstream>
+#include <iostream>
 
 namespace rocksdb
 {

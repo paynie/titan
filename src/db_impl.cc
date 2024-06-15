@@ -158,6 +158,10 @@ TitanDBImpl::TitanDBImpl(const TitanDBOptions& options,
     db_options_.dirname = dbname_ + "/titandb";
   }
   dirname_ = db_options_.dirname;
+  std::vector<std::string> dir_splits;
+  string_split(dbname, '/', dir_splits);
+  cache_prefix_ = dir_splits[dir_splits.size() - 1];
+
   if (db_options_.statistics != nullptr) {
     // The point of `statistics` is that it can be shared by multiple instances.
     // So we should check if it's a qualified statistics instead of overwriting
@@ -240,6 +244,8 @@ Status TitanDBImpl::Open(const std::vector<TitanCFDescriptor>& descs,
   }
   return s;
 }
+
+
 
 Status TitanDBImpl::OpenImpl(const std::vector<TitanCFDescriptor>& descs,
                              std::vector<ColumnFamilyHandle*>* handles) {
@@ -338,7 +344,7 @@ Status TitanDBImpl::OpenImpl(const std::vector<TitanCFDescriptor>& descs,
                           titan_table_factories[i]}));
     column_families[(*handles)[i]->GetID()] = descs[i].options;
   }
-  s = blob_file_set_->Open(column_families, GenerateCachePrefix());
+  s = blob_file_set_->Open(column_families, cache_prefix_);
   if (!s.ok()) {
     return s;
   }
@@ -500,7 +506,7 @@ Status TitanDBImpl::CreateColumnFamilies(
                  MutableTitanCFOptions(descs[i].options), base_table_factory[i],
                  titan_table_factory[i]}));
       }
-      blob_file_set_->AddColumnFamilies(column_families, GenerateCachePrefix());
+      blob_file_set_->AddColumnFamilies(column_families, cache_prefix_);
       for (size_t i = 0; i < handles->size(); i++) {
         auto rocks_cf_handle =
             static_cast_with_check<rocksdb::ColumnFamilyHandleImpl>(

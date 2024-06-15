@@ -4,8 +4,15 @@ namespace rocksdb
 {
   namespace titandb
   {
-    std::string get_b2hex(const char * source, int len)
-    {
+    void string_split(std::string str, const char split, std::vector<std::string>& res) {
+      std::istringstream iss(str);
+      std::string token;
+      while (getline(iss, token, split)) {
+        res.push_back(token);
+      }
+    }
+
+    std::string get_b2hex(const char * source, int len) {
       std::string strHexPack;
       for (int i = 0; i < len; ++i)
       {

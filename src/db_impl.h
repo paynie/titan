@@ -343,6 +343,7 @@ class TitanDBImpl : public TitanDB {
 
   std::string dbname_;
   std::string dirname_;
+  std::string cache_prefix_;
   Env* env_;
   EnvOptions env_options_;
   DBImpl* db_impl_;  // Base DB impl

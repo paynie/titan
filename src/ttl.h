@@ -6,6 +6,7 @@ namespace rocksdb
 {
   namespace titandb
   {
+    void string_split(std::string str, const char split, std::vector<std::string>& res);
     std::string get_b2hex(const char * source, int len);
     // Transform bytes to long
     uint64_t BigBytesToLong(const char *bytes, int len);

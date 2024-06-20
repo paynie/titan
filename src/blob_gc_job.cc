@@ -506,10 +506,8 @@ Status BlobGCJob::RewriteValidKeyToLSM() {
   wo.low_pri = true;
   wo.ignore_missing_column_families = true;
 
-  std::unordered_map<uint64_t, uint64_t>
-      dropped;  // blob_file_number -> dropped_size
+  std::unordered_map<uint64_t, uint64_t> dropped;  // blob_file_number -> dropped_size
   for (auto& write_batch : rewrite_batches_) {
-                   get_b2hex(write_batch.first.Data().c_str(), write_batch.first.Data().size()).c_str());
     if (blob_gc_->GetColumnFamilyData()->IsDropped()) {
       s = Status::Aborted("Column family drop");
       break;

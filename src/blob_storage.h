@@ -35,11 +35,7 @@ class BlobStorage {
         file_cache_(_file_cache),
         destroyed_(false),
         stats_(stats),
-        initialized_(initialized) {
-    TITAN_LOG_INFO(db_options_.info_log, "Paynie add Create BlobStorage db path = %s, cf_id = %u",
-                   db_options_.dirname.c_str(),
-                   cf_id_);
-  }
+        initialized_(initialized) {}
 
   ~BlobStorage() {
     for (auto& file : files_) {

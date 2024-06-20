@@ -284,7 +284,6 @@ Status TitanDBImpl::OpenImpl(const std::vector<TitanCFDescriptor>& descs,
   // Note that info log is initialized after `CreateLoggerFromOptions`,
   // so new `BlobFileSet` here but not in constructor is to get a proper info
   // log.
-  TITAN_LOG_INFO(db_options_.info_log, "Paynie add reset blob_file_set_");
   blob_file_set_.reset(
       new BlobFileSet(db_options_, stats_.get(), &initialized_, &mutex_));
   // Setup options.
@@ -376,7 +375,6 @@ Status TitanDBImpl::OpenImpl(const std::vector<TitanCFDescriptor>& descs,
   db_->EnableAutoCompaction(cf_with_compaction);
   StartBackgroundTasks();
   // Dump options.
-  TITAN_LOG_INFO(db_options_.info_log, "Titan DB open.");
   TITAN_LOG_HEADER(db_options_.info_log, "Titan git sha: %s",
                    titan_build_git_sha);
   db_options_.Dump(db_options_.info_log.get());
@@ -706,18 +704,7 @@ Status TitanDBImpl::GetImpl(const ReadOptions& options,
   gopts.value = value;
   gopts.is_blob_index = &is_blob_index;
 
-  TITAN_LOG_INFO(db_options_.info_log,
-                 "Paynie add before get value for key %s",
-                 get_b2hex(key.data(), key.size()).c_str()
-                 );
-
   s = db_impl_->GetImpl(options, key, gopts);
-
-  TITAN_LOG_INFO(db_options_.info_log,
-                 "Paynie add after get value for key %s, status = %s",
-                 get_b2hex(key.data(), key.size()).c_str(),
-                 s.ToString().c_str()
-                 );
   if (!s.ok() || !is_blob_index) return s;
 
   StopWatch get_sw(env_->GetSystemClock().get(), statistics(stats_.get()),
@@ -728,16 +715,6 @@ Status TitanDBImpl::GetImpl(const ReadOptions& options,
   s = index.DecodeFrom(value);
   assert(s.ok());
 
-  TITAN_LOG_INFO(db_options_.info_log,
-                 "Paynie add get value for key %s, file number = %" PRIu64 ", offset = %" PRIu64 ", "
-                 "size = %" PRIu64 ", ttl = %" PRIu64 "",
-                 get_b2hex(key.data(), key.size()).c_str(),
-                 index.file_number,
-                 index.blob_handle.offset,
-                 index.blob_handle.size,
-                 index.ttl
-  );
-
   if (!s.ok()) return s;
 
   auto storage =
@@ -745,31 +722,12 @@ Status TitanDBImpl::GetImpl(const ReadOptions& options,
 
   std::vector<std::string> files;
   storage->GetAllFiles(&files);
-
-  TITAN_LOG_INFO(db_options_.info_log,
-                 "Paynie add blob storage dir is %s",
-                 storage->db_options().dirname.c_str()
-  );
-
-  for(long unsigned int i = 0; i < files.size(); i++) {
-    TITAN_LOG_INFO(db_options_.info_log,
-                   "Paynie add blob file name is %s",
-                   files[i].c_str()
-    );
-  }
-
   if (storage) {
     StopWatch read_sw(env_->GetSystemClock().get(), statistics(stats_.get()),
                       TITAN_BLOB_FILE_READ_MICROS);
     value->Reset();
     BlobRecord record;
     s = storage->Get(options, index, &record, value);
-
-    TITAN_LOG_INFO(db_options_.info_log,
-                   "Paynie add get value for key %s, value = %s",
-                   get_b2hex(key.data(), key.size()).c_str(),
-                   get_b2hex(value->data(), value->size()).c_str()
-    );
 
     RecordTick(statistics(stats_.get()), TITAN_BLOB_FILE_NUM_KEYS_READ);
     RecordTick(statistics(stats_.get()), TITAN_BLOB_FILE_BYTES_READ,

@@ -182,22 +182,11 @@ Status BlobGCJob::DoRunGC() {
     // count read bytes for blob record of gc candidate files
     metrics_.gc_bytes_read += blob_index.blob_handle.size;
 
-    Slice paynie_key = gc_iter->key();
-    TITAN_LOG_INFO(db_options_.info_log,
-                   "Paynie add Merge for key = %s, file number = %" PRIu64 ", offset = %" PRIu64 ", length = %" PRIu64 ", ttl = %" PRIu64 ", value = %s",
-                   get_b2hex(paynie_key.data(), paynie_key.size()).c_str(),
-                   blob_index.file_number,
-                   blob_index.blob_handle.offset,
-                   blob_index.blob_handle.size,
-                   blob_index.ttl,
-                   get_b2hex(gc_iter->value().data(), gc_iter->value().size()).c_str());
-
     if (!last_key.empty() && (gc_iter->key().compare(last_key) == 0)) {
       if (last_key_is_fresh) {
         // We only need to rewrite the newest version. Blob files containing
         // the older versions will not be purged if there's a snapshot
         // referencing them.
-        TITAN_LOG_INFO(db_options_.info_log, "Paynie add last_key_is_fresh is true, skip");
         continue;
       }
     } else {
@@ -208,13 +197,11 @@ Status BlobGCJob::DoRunGC() {
     bool discardable = false;
     s = DiscardEntry(gc_iter->key(), blob_index, &discardable);
     if (!s.ok()) {
-      TITAN_LOG_INFO(db_options_.info_log, "Paynie add DiscardEntry status is not ok, break, status = %s", s.ToString().c_str());
       break;
     }
     if (discardable) {
       metrics_.gc_num_keys_overwritten++;
       metrics_.gc_bytes_overwritten += blob_index.blob_handle.size;
-      TITAN_LOG_INFO(db_options_.info_log, "Paynie add DiscardEntry discardable = true, skip");
       continue;
     }
     last_key_is_fresh = true;
@@ -287,9 +274,7 @@ Status BlobGCJob::DoRunGC() {
     ctx->new_blob_index.ttl = ttl;
 
     BlobFileBuilder::OutContexts contexts;
-    TITAN_LOG_INFO(db_options_.info_log, "Paynie add Write blob record");
     blob_file_builder->Add(blob_record, std::move(ctx), &contexts);
-    TITAN_LOG_INFO(db_options_.info_log, "Paynie add Write index");
     BatchWriteNewIndices(contexts, &s);
 
     if (!s.ok()) {
@@ -318,21 +303,6 @@ void BlobGCJob::BatchWriteNewIndices(BlobFileBuilder::OutContexts& contexts,
   auto* cfh = blob_gc_->column_family_handle();
   for (const std::unique_ptr<BlobFileBuilder::BlobRecordContext>& ctx :
        contexts) {
-
-    TITAN_LOG_INFO(db_options_.info_log,
-                   "Paynie add write index for key = %s, "
-                   "old file number = %" PRIu64 ", old offset = %" PRIu64 ", old length = %" PRIu64 ", old ttl = %" PRIu64 ""
-                   "new file number = %" PRIu64 ", new offset = %" PRIu64 ", new length = %" PRIu64 ", new ttl = %" PRIu64 "",
-                   get_b2hex(ctx->key.c_str(), ctx->key.size()).c_str(),
-                   ctx->original_blob_index.file_number,
-                   ctx->original_blob_index.blob_handle.offset,
-                   ctx->original_blob_index.blob_handle.size,
-                   ctx->original_blob_index.ttl,
-                   ctx->new_blob_index.file_number,
-                   ctx->new_blob_index.blob_handle.offset,
-                   ctx->new_blob_index.blob_handle.size,
-                   ctx->new_blob_index.ttl);
-
     BlobIndex blob_index;
     blob_index.file_number = ctx->new_blob_index.file_number;
     blob_index.blob_handle = ctx->new_blob_index.blob_handle;
@@ -343,7 +313,6 @@ void BlobGCJob::BatchWriteNewIndices(BlobFileBuilder::OutContexts& contexts,
     ParsedInternalKey ikey;
     *s = ParseInternalKey(ctx->key, &ikey, false /*log_err_key*/);
     if (!s->ok()) {
-      TITAN_LOG_INFO(db_options_.info_log, "Paynie add ParseInternalKey failed, return, status = %s", s->ToString().c_str());
       return;
     }
     blob_index.EncodeTo(&index_entry);
@@ -356,7 +325,6 @@ void BlobGCJob::BatchWriteNewIndices(BlobFileBuilder::OutContexts& contexts,
     *s = WriteBatchInternal::PutBlobIndex(&wb, cfh->GetID(), ikey.user_key,
                                           index_entry);
     if (!s->ok()) {
-      TITAN_LOG_INFO(db_options_.info_log, "Paynie add PutBlobIndex failed, break. status = %s", s->ToString().c_str());
       break;
     }
   }
@@ -401,7 +369,6 @@ Status BlobGCJob::DiscardEntry(const Slice& key, const BlobIndex& blob_index,
   Status s = base_db_impl_->GetImpl(ReadOptions(), key, gopts);
 
   if (!s.ok() && !s.IsNotFound()) {
-    TITAN_LOG_INFO(db_options_.info_log, "Paynie add DiscardEntry get status = %s", s.ToString().c_str());
     return s;
   }
   // count read bytes for checking LSM entry
@@ -416,7 +383,6 @@ Status BlobGCJob::DiscardEntry(const Slice& key, const BlobIndex& blob_index,
   BlobIndex other_blob_index;
   s = other_blob_index.DecodeFrom(&index_entry);
   if (!s.ok()) {
-    TITAN_LOG_INFO(db_options_.info_log, "Paynie add DiscardEntry decode index failed, status = %s", s.ToString().c_str());
     return s;
   }
 
@@ -432,7 +398,6 @@ Status BlobGCJob::Finish() {
   {
     mutex_->Unlock();
     s = InstallOutputBlobFiles();
-    TITAN_LOG_INFO(db_options_.info_log, "Paynie add Finish InstallOutputBlobFiles status = %s", s.ToString().c_str());
     if (s.ok()) {
       TEST_SYNC_POINT("BlobGCJob::Finish::BeforeRewriteValidKeyToLSM");
       s = RewriteValidKeyToLSM();
@@ -544,7 +509,6 @@ Status BlobGCJob::RewriteValidKeyToLSM() {
   std::unordered_map<uint64_t, uint64_t>
       dropped;  // blob_file_number -> dropped_size
   for (auto& write_batch : rewrite_batches_) {
-    TITAN_LOG_INFO(db_options_.info_log, "Paynie add RewriteValidKeyToLSM for key %s",
                    get_b2hex(write_batch.first.Data().c_str(), write_batch.first.Data().size()).c_str());
     if (blob_gc_->GetColumnFamilyData()->IsDropped()) {
       s = Status::Aborted("Column family drop");
@@ -555,8 +519,6 @@ Status BlobGCJob::RewriteValidKeyToLSM() {
       break;
     }
     s = db_impl->WriteWithCallback(wo, &write_batch.first, &write_batch.second);
-
-    TITAN_LOG_INFO(db_options_.info_log, "Paynie add status = %s", s.ToString().c_str());
 
     const auto& new_blob_index = write_batch.second.new_blob_index();
     if (s.ok()) {
@@ -572,7 +534,6 @@ Status BlobGCJob::RewriteValidKeyToLSM() {
         metrics_.gc_bytes_fallback += write_batch.second.blob_record_size();
       }
     } else if (s.IsBusy()) {
-      TITAN_LOG_INFO(db_options_.info_log, "Paynie add s.IsBusy()");
       metrics_.gc_num_keys_overwritten++;
       metrics_.gc_bytes_overwritten += write_batch.second.blob_record_size();
       // The key is overwritten in the meanwhile. Drop the blob record.
@@ -582,7 +543,6 @@ Status BlobGCJob::RewriteValidKeyToLSM() {
       dropped[new_blob_index.file_number] += new_blob_index.blob_handle.size;
     } else {
       // We hit an error.
-      TITAN_LOG_INFO(db_options_.info_log, "Paynie add error");
       break;
     }
     // count read bytes in write callback

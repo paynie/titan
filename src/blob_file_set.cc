@@ -20,9 +20,6 @@ BlobFileSet::BlobFileSet(const TitanDBOptions& options, TitanStats* stats,
       stats_(stats),
       mutex_(mutex),
       initialized_(initialized) {
-
-  TITAN_LOG_INFO(db_options_.info_log, "Paynie add reset blob_file_set_, dir name = %s", dirname_.c_str());
-
   auto file_cache_size = db_options_.max_open_files;
   if (file_cache_size < 0) {
     file_cache_size = kMaxFileCacheSize;
@@ -39,10 +36,9 @@ Status BlobFileSet::Open(
   // Sets up initial column families.
   AddColumnFamilies(column_families, cache_prefix);
 
-  TITAN_LOG_INFO(db_options_.info_log, "Paynie add Open cache prefix = %s", cache_prefix.c_str());
-
+  TITAN_LOG_INFO(db_options_.info_log, "Open cache prefix = %s", cache_prefix.c_str());
   Status s = env_->FileExists(CurrentFileName(dirname_));
-  TITAN_LOG_INFO(db_options_.info_log, "Paynie add Open FileExists status = %s", s.ToString().c_str());
+
   if (s.ok()) {
     return Recover();
   }
@@ -328,9 +324,6 @@ void BlobFileSet::AddColumnFamilies(
     const std::map<uint32_t, TitanCFOptions>& column_families,
     const std::string& cache_prefix) {
   for (auto& cf : column_families) {
-    TITAN_LOG_INFO(db_options_.info_log,
-                   "Paynie add add column family %u ", cf.first);
-
     auto file_cache = std::make_shared<BlobFileCache>(db_options_, cf.second,
                                                       file_cache_, stats_);
     auto blob_storage = std::make_shared<BlobStorage>(
@@ -338,7 +331,6 @@ void BlobFileSet::AddColumnFamilies(
         initialized_);
 
     if (stats_ != nullptr) {
-      TITAN_LOG_INFO(db_options_.info_log, "Paynie add create blob storage stats_ != nullptr");
       stats_->InitializeCF(cf.first, blob_storage);
     }
     column_families_.emplace(cf.first, blob_storage);

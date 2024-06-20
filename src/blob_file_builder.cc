@@ -57,9 +57,7 @@ void BlobFileBuilder::Add(const BlobRecord& record,
                           OutContexts* out_ctx) {
   if (!ok()) return;
   std::string key = record.key.ToString();
-  TITAN_LOG_INFO(db_options_.info_log, "Paynie add builder add key %s", get_b2hex(key.c_str(), key.size()).c_str());
   if (builder_state_ == BuilderState::kBuffered) {
-    TITAN_LOG_INFO(db_options_.info_log, "Paynie add builder_state_ == BuilderState::kBuffered");
     std::string record_str;
     // Encode to take ownership of underlying string.
     record.EncodeTo(&record_str);
@@ -74,14 +72,6 @@ void BlobFileBuilder::Add(const BlobRecord& record,
   } else {
     encoder_.EncodeRecord(record);
     WriteEncoderData(&ctx->new_blob_index.blob_handle);
-    TITAN_LOG_INFO(db_options_.info_log, "Paynie add write record key = %s, value = %s, "
-                                         "file number = %" PRIu64 ", offset = %" PRIu64 ", length = %" PRIu64 ", ttl = %" PRIu64 "",
-                                         get_b2hex(ctx->key.c_str(), ctx->key.size()).c_str(),
-                                         get_b2hex(record.value.data(), record.value.size()).c_str(),
-                                         ctx->new_blob_index.file_number,
-                                         ctx->new_blob_index.blob_handle.offset,
-                                         ctx->new_blob_index.blob_handle.size,
-                                         ctx->new_blob_index.ttl);
     out_ctx->emplace_back(std::move(ctx));
   }
 
@@ -157,9 +147,6 @@ void BlobFileBuilder::WriteEncoderData(BlobHandle* handle) {
   handle->offset = file_->GetFileSize();
   handle->size = encoder_.GetEncodedSize();
   live_data_size_ += handle->size;
-
-  TITAN_LOG_INFO(db_options_.info_log, "Paynie add WriteEncoderData, file name = %s", file_->file_name().c_str());
-
   status_ = file_->Append(encoder_.GetHeader());
   if (ok()) {
     status_ = file_->Append(encoder_.GetRecord());

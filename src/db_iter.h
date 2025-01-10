@@ -107,7 +107,7 @@ class TitanDBIterator : public Iterator {
       }
       char *serialzed_ttl = new char[8];
       longToBigBytes(index.ttl, serialzed_ttl, 8);
-      return new Slice(serialzed_ttl, 8);
+      return Slice(serialzed_ttl, 8);
     }
 
     if (options_.key_only && !enable_ttl_) return Slice();

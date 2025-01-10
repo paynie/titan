@@ -18,6 +18,7 @@
 #include "blob_storage.h"
 #include "titan_logging.h"
 #include "titan_stats.h"
+#include "ttl.h"
 
 namespace rocksdb {
 namespace titandb {
@@ -27,14 +28,15 @@ class TitanDBIterator : public Iterator {
   TitanDBIterator(const TitanReadOptions &options, BlobStorage *storage,
                   std::shared_ptr<ManagedSnapshot> snap,
                   std::unique_ptr<ArenaWrappedDBIter> iter, SystemClock *clock,
-                  TitanStats *stats, Logger *info_log)
+                  TitanStats *stats, Logger *info_log, bool enable_ttl)
       : options_(options),
         storage_(storage),
         snap_(snap),
         iter_(std::move(iter)),
         clock_(clock),
         stats_(stats),
-        info_log_(info_log) {}
+        info_log_(info_log),
+        enable_ttl_(enable_ttl){}
 
   ~TitanDBIterator() {
     RecordInHistogram(statistics(stats_), TITAN_ITER_TOUCH_BLOB_FILE_COUNT,
@@ -90,7 +92,24 @@ class TitanDBIterator : public Iterator {
   }
 
   Slice value() const override {
-    assert(Valid() && !options_.key_only);
+    assert(Valid());
+    if (options_.key_only && enable_ttl_ && iter_->IsBlob()) {
+      // return ttl
+      Status s;
+      BlobIndex index;
+      s = DecodeInto(iter_->value(), &index);
+      if (!s.ok()) {
+        TITAN_LOG_ERROR(
+          info_log_, "Titan iterator: failed to decode blob index %s: %s",
+          iter_->value().ToString(true /*hex*/).c_str(), s.ToString().c_str());
+        if (options_.abort_on_failure) std::abort();
+        return Slice();
+      }
+      char *serialzed_ttl = new char[8];
+      longToBigBytes(index.ttl, serialzed_ttl, 8);
+      return new Slice(serialzed_ttl, 8);
+    }
+    
     if (options_.key_only) return Slice();
     if (!iter_->IsBlob()) return iter_->value();
 
@@ -206,6 +225,7 @@ class TitanDBIterator : public Iterator {
   SystemClock *clock_;
   TitanStats *stats_;
   Logger *info_log_;
+  bool enable_ttl_;
 };
 
 }  // namespace titandb

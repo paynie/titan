@@ -813,7 +813,7 @@ Iterator* TitanDBImpl::NewIteratorImpl(
       true /*allow_refresh*/));
   return new TitanDBIterator(options, storage.get(), snapshot, std::move(iter),
                              env_->GetSystemClock().get(), stats_.get(),
-                             db_options_.info_log.get());
+                             db_options_.info_log.get(), true);
 }
 
 Status TitanDBImpl::NewIterators(

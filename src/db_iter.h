@@ -109,8 +109,8 @@ class TitanDBIterator : public Iterator {
       longToBigBytes(index.ttl, serialzed_ttl, 8);
       return new Slice(serialzed_ttl, 8);
     }
-    
-    if (options_.key_only) return Slice();
+
+    if (options_.key_only && !enable_ttl_) return Slice();
     if (!iter_->IsBlob()) return iter_->value();
 
     HistogramType hist_type;
